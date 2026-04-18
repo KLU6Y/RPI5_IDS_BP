@@ -1,3 +1,6 @@
+Autonomní IDS systém na základu Raspberry Pi 5 se schopností real-time detekce a klasifikace anomálií síťového provozu.
+
+
 Složka MAC_detekce je kompletní složkou MAC_detekce, se kterou pracuje celý systém, obsahuje natrénované modely, veškeré whitelisty, blacklisty a skripty potřebné k běhu.
 
 Složka ZEEK_LOGS obsahuje složky trénovacích JSON logů pro modely HOME a AWAY a složku TEST, která obsahuje data z doby, kdy byl model testován v reálném čase. Dále obsahuje CSV soubory s vyexportovanými "tabulkami" anomálií z InfluxDB podle jejich klasifikace.
