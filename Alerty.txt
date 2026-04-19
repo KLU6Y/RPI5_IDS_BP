@@ -1,0 +1,240 @@
+Zakázaná doména
+
+
+
+from(bucket: "zeek")
+  |> range(start: -2m)
+  |> filter(fn: (r) => r["_measurement"] == "anomaly_banned_domain")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+  |> map(fn: (r) => ({
+      _time: r._time,
+      mode: r.mode,
+      ip: r.ip,
+      mac: r.mac,
+      device: r.device,
+      domain: string(v: r.domain),
+      connections: string(v: r.connections),
+      _value: 1.0
+  }))
+  |> group(columns: ["mode", "ip", "mac", "device", "domain", "connections"])
+
+
+
+🚫 Přístup na zakázanou doménu: {{ $labels.domain }}!
+
+
+
+> Zařízení v síti komunikuje se zakázanou doménou!
+
+**Režim:** `{{ $labels.mode }}`
+
+**Původce:** `{{ $labels.ip }}` 
+(`{{ $labels.device }}` - `{{ $labels.mac }}`)
+🌐 **Doména:** `{{ $labels.domain }}`
+🔄 **Počet pokusů:** `{{ $labels.connections }}`
+
+______________________________________________________________________________
+Neznámá MAC
+
+
+
+from(bucket: "zeek")
+  |> range(start: -2m)
+  |> filter(fn: (r) => r["_measurement"] == "anomaly_unknown_mac")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+  |> map(fn: (r) => ({
+      _time: r._time,
+      _field: "mac_alert",   
+      _value: 1.0, 
+      mac: r.mac,
+      mode: r.mode,
+      vendor: r.vendor,
+      ip: string(v: r.ip)
+  }))
+  |> group(columns: ["mac", "vendor", "ip", "mode", "_field"])
+
+
+
+❓ Neznámé zařízení v síti!
+
+
+
+> Do sítě se připojilo zařízení, které není na MAC whitelistu!
+
+**Režim:** `{{ $labels.mode }}`
+
+**MAC adresa:** `{{ $labels.mac }}`
+**Výrobce:** `{{ $labels.vendor }}`
+**Použitá IP:** `{{ $labels.ip }}`
+
+______________________________________________________________________________
+Nadměrný datový přenos
+
+
+
+from(bucket: "zeek")
+  |> range(start: -2m)
+  |> filter(fn: (r) => r["_measurement"] == "anomaly_high_traffic")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+  |> map(fn: (r) => ({
+      _time: r._time,
+      mode: r.mode,
+      label: r.label,
+      ip: r.ip,
+      mac: r.mac,
+      device: r.device,
+      dest_ip: r.dest_ip,
+      service: string(v: r.service),
+      domain: string(v: r.domain),
+      up_mb: string(v: r.up_mb),
+      down_mb: string(v: r.down_mb),
+      _value: 1.0
+  }))
+  |> group(columns: ["mode", "label", "ip", "mac", "device", "dest_ip", "service", "domain", "up_mb", "down_mb"])
+
+
+
+📈 Nadměrný datový přenos z IP: {{ $labels.ip }}!
+
+
+
+> Zařízení generuje nadměrný síťový provoz!
+
+**Režim:** `{{ $labels.mode }}`
+
+**Původce:** `{{ $labels.ip }}` 
+(`{{ $labels.device }}` - `{{ $labels.mac }}`)
+**Cílová doména:** {{ $labels.domain }}
+**Cílová IP:** `{{ $labels.dest_ip }}`
+**Port:** `{{ $labels.service }}`
+
+⬇️ **Download:** `{{ $labels.down_mb }} MB`
+⬆️ **Upload:** `{{ $labels.up_mb }} MB`
+
+______________________________________________________________________________
+Nespecifikovaná anomálie
+
+
+
+from(bucket: "zeek")
+  |> range(start: -2m)
+  |> filter(fn: (r) => r["_measurement"] == "anomaly_ml")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+  |> map(fn: (r) => ({
+      _time: r._time,
+      mode: r.mode,
+      label: r.label,
+      ip: r.ip,
+      mac: r.mac,
+      device: r.device,
+      dest_ip: r.dest_ip,
+      service: string(v: r.service),
+      domain: string(v: r.domain),
+      up_mb: string(v: r.up_mb),
+      down_mb: string(v: r.down_mb),
+      global_ips: string(v: r.global_ips),
+      global_ports: string(v: r.global_ports),
+      connections: string(v: r.connections),
+      fail_ratio: string(v: r.fail_ratio * 100.0),
+      _value: 1.0
+  }))
+|> group(columns: ["mode", "label", "ip", "mac", "device", "dest_ip", "service", "domain", "up_mb", "down_mb", "global_ips", "global_ports", "connections", "fail_ratio"])
+
+
+
+🤖 Nespecifikovaná anomálie: Neobvyklý provoz u {{ $labels.ip }}!
+
+
+
+> ML model vyhodnotil komunikaci tohoto zařízení jako  odchylku od běžného chování!
+
+**Režim:** `{{ $labels.mode }}`
+
+**Původce:** `{{ $labels.ip }}` 
+(`{{ $labels.device }}` - `{{ $labels.mac }}`)
+**Cílová doména:** {{ $labels.domain }}
+**Cílová IP:** `{{ $labels.dest_ip }}`
+**Port:** `{{ $labels.service }}`
+
+**Unikátní IP:** `{{ $labels.global_ips }}`
+**Unikátní porty:** `{{ $labels.global_ports }}`
+**Spojení:** `{{ $labels.connections }}`
+**Chybovost spojení:** `{{ $labels.fail_ratio }}`
+
+⬇️ **Download:** `{{ $labels.down_mb }} MB`
+⬆️ **Upload:** `{{ $labels.up_mb }} MB`
+
+______________________________________________________________________________
+Scany portů
+
+
+
+from(bucket: "zeek")
+  |> range(start: -2m)
+  |> filter(fn: (r) => r["_measurement"] == "anomaly_port_scan" or r["_measurement"] == "anomaly_dos")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+  |> map(fn: (r) => ({
+      _time: r._time,
+      mode: r.mode,
+      label: r.label,
+      ip: r.ip,
+      mac: r.mac,
+      device: r.device,
+      dest_ip: r.dest_ip,
+      service: string(v: r.service),
+      domain: string(v: r.domain),
+      connections: string(v: r.connections),
+      fail_ratio: if exists r.fail_ratio then string(v: int(v: r.fail_ratio * 100.0)) + " %" else "N/A",
+      _value: 1.0
+  }))
+  |> group(columns: ["mode", "label", "ip", "mac", "device", "dest_ip", "service", "domain", "connections", "fail_ratio"])
+
+
+
+⚠️ Detekován Port Scan!
+
+
+
+> Detekováno skenování aplikačních portů v síti.
+
+**Režim:** `{{ $labels.mode }}`
+
+**Původce:** `{{ $labels.ip }}` 
+(`{{ $labels.device }}` - `{{ $labels.mac }}`)
+🎯 **Cíl:** `{{ $labels.dest_ip }}`
+🔌 **Port:** `{{ $labels.service }}`
+🔄 **Počet spojení:** `{{ $labels.connections }}`
+❌ **Chybovost spojení:** `{{ $labels.fail_ratio }}`
+
+______________________________________________________________________________
+ARP spoof
+
+
+
+from(bucket: "zeek")
+  |> range(start: -2m)
+  |> filter(fn: (r) => r["_measurement"] == "anomaly_arp_spoof")
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+  |> map(fn: (r) => ({
+      _time: r._time,
+      mode: r.mode,
+      mac: r.mac,
+      old_mac: r.old_mac,
+      ip: string(v: r.ip),
+      _value: 1.0
+  }))
+  |> group(columns: ["mode", "mac", "old_mac", "ip"])
+
+
+
+🚨 ARP Spoofing!
+
+
+
+> Byla detekována náhlá změna MAC adresy u IP adresy.
+
+**Režim:** `{{ $labels.mode }}`
+
+**IP:** `{{ $labels.ip }}`
+🛑 **Nová MAC:** `{{ $labels.mac }}`
+✅ **Původní MAC:** `{{ $labels.old_mac }}`

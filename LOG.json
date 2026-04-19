@@ -392,7 +392,7 @@
       "pluginVersion": "12.4.0",
       "targets": [
         {
-          "query": "from(bucket: \"zeek\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"anomaly_banned_domain\")\r\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> sort(columns: [\"_time\"], desc: true) // Přesunuto sem\r\n  |> map(fn: (r) => ({\r\n      \"Čas\": r._time,\r\n      \"Režim\": r.mode,\r\n      \"Původce\": r.ip + \" (\" + r.device + \" - \" + r.mac + \")\",\r\n      \"Zakázaná doména\": r.domain, // Drobná oprava překlepu\r\n      \"Počet pokusů\": r.connections\r\n  }))",
+          "query": "from(bucket: \"zeek\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"anomaly_banned_domain\")\r\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> sort(columns: [\"_time\"], desc: true)\r\n  |> map(fn: (r) => ({\r\n      \"Čas\": r._time,\r\n      \"Režim\": r.mode,\r\n      \"Původce\": r.ip + \" (\" + r.device + \" - \" + r.mac + \")\",\r\n      \"Zakázaná doména\": r.domain,\r\n      \"Počet pokusů\": r.connections\r\n  }))",
           "refId": "A"
         }
       ],
@@ -887,7 +887,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 364
+                "value": 478
               }
             ]
           },
@@ -1035,7 +1035,13 @@
       "id": 4,
       "options": {
         "cellHeight": "sm",
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Čas"
+          }
+        ]
       },
       "pluginVersion": "12.4.0",
       "targets": [
@@ -1304,7 +1310,7 @@
       "pluginVersion": "12.4.0",
       "targets": [
         {
-          "query": "from(bucket: \"zeek\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"anomaly_ml\")\r\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> sort(columns: [\"_time\"], desc: true) // Opět bezpečně přesunuto\r\n  |> map(fn: (r) => ({\r\n      \"Čas\": r._time,\r\n      \"Režim\": r.mode,\r\n      \"Původce\": r.ip + \" (\" + r.device + \" - \" + r.mac + \")\",\r\n      \"Cílová IP\": r.dest_ip,\r\n      \"Port\": r.service,\r\n      \"Cílová doména\": r.domain,\r\n      \"Spojení\": r.connections,\r\n      \"Unikátní IP\": r.global_ips,\r\n      \"Unikátní porty\": r.global_ports,\r\n      \"Chybovost spojení\": if exists r.fail_ratio then string(v: int(v: r.fail_ratio * 100.0)) + \" %\" else \"0 %\",\r\n      \"Upload (MB)\": r.up_mb,\r\n      \"Download (MB)\": r.down_mb\r\n  }))",
+          "query": "from(bucket: \"zeek\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"anomaly_ml\")\r\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")\r\n  |> sort(columns: [\"_time\"], desc: true)\r\n  |> map(fn: (r) => ({\r\n      \"Čas\": r._time,\r\n      \"Režim\": r.mode,\r\n      \"Původce\": r.ip + \" (\" + r.device + \" - \" + r.mac + \")\",\r\n      \"Cílová IP\": r.dest_ip,\r\n      \"Port\": r.service,\r\n      \"Cílová doména\": r.domain,\r\n      \"Spojení\": r.connections,\r\n      \"Unikátní IP\": r.global_ips,\r\n      \"Unikátní porty\": r.global_ports,\r\n      \"Chybovost spojení\": if exists r.fail_ratio then string(v: int(v: r.fail_ratio * 100.0)) + \" %\" else \"0 %\",\r\n      \"Upload (MB)\": r.up_mb,\r\n      \"Download (MB)\": r.down_mb\r\n  }))",
           "refId": "A"
         }
       ],
@@ -1343,13 +1349,13 @@
     "list": []
   },
   "time": {
-    "from": "now-90d",
+    "from": "now-14d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "LOG",
   "uid": "ad25h5f",
-  "version": 88,
+  "version": 92,
   "weekStart": ""
 }

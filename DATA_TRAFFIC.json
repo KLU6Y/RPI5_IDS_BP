@@ -667,13 +667,13 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-10d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "DATA_TRAFFIC",
   "uid": "adcmz6h",
-  "version": 66,
+  "version": 67,
   "weekStart": ""
 }

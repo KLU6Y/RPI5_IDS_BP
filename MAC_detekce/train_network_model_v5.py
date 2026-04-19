@@ -81,6 +81,12 @@ def extract_features(day_folder):
     else:
         df_conn['is_tcp'] = df_conn['is_udp'] = df_conn['is_icmp'] = 0
 
+    # NOVÉ: Detekce selhaných, odmítnutých a nedokončených spojení (typické pro port scany)
+    if 'conn_state' in df_conn.columns:
+        df_conn['failed_conns'] = df_conn['conn_state'].isin(['REJ', 'S0', 'S1', 'OTHR']).astype(int)
+    else:
+        df_conn['failed_conns'] = 0
+
     # Agregace dat po 1 minutě (vytváří se časová "okna" pro model)
     features = df_conn.resample('1Min', on='ts').agg({
         'orig_bytes': 'sum',       # Celkový odchozí provoz
@@ -90,6 +96,7 @@ def extract_features(day_folder):
         'is_tcp': 'sum',           # Počet TCP spojení
         'is_udp': 'sum',           # Počet UDP spojení
         'is_icmp': 'sum',          # Počet ICMP (ping) spojení
+        'failed_conns': 'sum',     # PŘIDÁNO: Celkový počet selhaných spojení v dané minutě
         'duration': 'mean'         # Průměrná délka spojení v dané minutě
     }).fillna(0) # Pokud v dané minutě neproběhla komunikace, hodnoty NaN se nahradí nulami
 
