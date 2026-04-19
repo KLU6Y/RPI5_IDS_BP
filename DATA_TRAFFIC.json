@@ -304,7 +304,7 @@
       "pluginVersion": "12.4.0",
       "targets": [
         {
-          "query": "import \"strings\"\r\n\r\nnorm = from(bucket: \"zeek\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"normal_traffic\" and r[\"_field\"] == \"connections\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      IP: r.top_ip,\r\n      MAC: r.top_mac,\r\n      Název: r.device\r\n  }))\r\n\r\nanom = from(bucket: \"zeek\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^anomaly_/ and r[\"_field\"] == \"domain\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      IP: r.ip,\r\n      MAC: r.mac,\r\n      Název: r.device\r\n  }))\r\n\r\nunion(tables: [norm, anom])\r\n  |> filter(fn: (r) => exists r.IP and r.IP != \"N/A\" and r.IP != \"\")\r\n  // ZDE JSME PŘIDALI FILTR NA LOKÁLNÍ SÍŤ\r\n  |> filter(fn: (r) => r.IP =~ /^192\\.168\\.69\\./) \r\n  |> group(columns: [\"IP\", \"MAC\", \"Název\"])\r\n  |> last(column: \"_time\")\r\n  |> group()\r\n  |> sort(columns: [\"IP\"])\r\n  |> map(fn: (r) => ({\r\n      \"Název\": r.Název,\r\n      \"IP\": r.IP,\r\n      \"MAC\": r.MAC\r\n  }))",
+          "query": "import \"strings\"\r\n\r\nnorm = from(bucket: \"zeek\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"normal_traffic\" and r[\"_field\"] == \"connections\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      IP: r.top_ip,\r\n      MAC: r.top_mac,\r\n      Název: r.device\r\n  }))\r\n\r\nanom = from(bucket: \"zeek\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^anomaly_/ and r[\"_field\"] == \"domain\")\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      IP: r.ip,\r\n      MAC: r.mac,\r\n      Název: r.device\r\n  }))\r\n\r\nunion(tables: [norm, anom])\r\n  |> filter(fn: (r) => exists r.IP and r.IP != \"N/A\" and r.IP != \"\")\r\n  |> filter(fn: (r) => r.IP =~ /^192\\.168\\.69\\./) \r\n  |> group(columns: [\"IP\", \"MAC\", \"Název\"])\r\n  |> last(column: \"_time\")\r\n  |> group()\r\n  |> sort(columns: [\"IP\"])\r\n  |> map(fn: (r) => ({\r\n      \"Název\": r.Název,\r\n      \"IP\": r.IP,\r\n      \"MAC\": r.MAC\r\n  }))",
           "refId": "A"
         }
       ],
@@ -674,6 +674,6 @@
   "timezone": "browser",
   "title": "DATA_TRAFFIC",
   "uid": "adcmz6h",
-  "version": 67,
+  "version": 68,
   "weekStart": ""
 }

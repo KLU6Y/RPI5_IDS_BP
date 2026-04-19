@@ -1,0 +1,21 @@
+﻿Čas;Režim;Klasifikace;Původce;Chybovost spojení;Cíl;Port;Počet spojení
+2026-04-18 16:48:39;home;Cileny Port Scan (1 IP);192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);N/A;192.168.69.3;Vice portu (1024);1025
+2026-04-12 21:20:44;home;Cileny Port Scan (1 IP);192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);N/A;192.168.69.3;Vice portu (1024);1025
+2026-04-12 17:44:59;home;Cileny Port Scan (1 IP);192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);N/A;192.168.69.3;Vice portu (1024);1025
+2026-04-12 17:06:03;home;Cileny Port Scan (1 IP);192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);N/A;192.168.69.3;Vice portu (1024);1025
+2026-04-12 16:52:35;home;Cileny Port Scan (1 IP);192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);N/A;192.168.69.3;Vice portu (3262);3256
+2026-04-18 18:01:43;home;Vertical Port Scan;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);99 %;External Subnet (2 IP);Multiple Ports (500);501
+2026-04-19 15:54:01;home;Vertikální Port Sken;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);99 %;IP: 192.168.69.1, 8.8.8.8;Více portů (500);1002
+2026-04-19 15:41:00;home;Vertikální Port Sken;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);99 %;IP: 192.168.69.3, 8.8.8.8;Více portů (500);501
+2026-04-19 15:55:01;home;Vertikální Port Sken;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);99 %;IP: 192.168.69.6, 8.8.8.8;Více portů (500);501
+2026-04-18 18:03:43;home;Horizontal Network Sweep;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);65 %;LAN Subnet (14 IP);Multiple Ports (2);23
+2026-04-18 18:02:43;home;Horizontal Network Sweep;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);90 %;LAN Subnet (14 IP);Multiple Ports (2);33
+2026-04-18 17:48:52;home;Network Sweep (Horizontalni scan v LAN);192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);84 %;LAN Subnet (14 IP);TCP/443;53
+2026-04-19 15:43:00;home;Horizontální síťový průzkum;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);80 %;Lokální síť (12 IP);Porty: 53, 80, 443;31
+2026-04-19 15:57:01;home;Horizontální síťový průzkum;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);93 %;Lokální síť (13 IP);Porty: 21, 22, 23, 25, 80;74
+2026-04-19 15:47:00;home;Horizontální síťový průzkum;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);84 %;Lokální síť (13 IP);Porty: 53, 3306;19
+2026-04-19 15:45:00;home;Horizontální síťový průzkum;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);72 %;Lokální síť (13 IP);Porty: 22, 53;18
+2026-04-18 18:18:06;home;Horizontální síťový průzkum;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);75 %;Lokální síť (14 IP);Více portů (2);20
+2026-04-18 18:17:06;home;Horizontální síťový průzkum;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);84 %;Lokální síť (14 IP);Více portů (3);39
+2026-04-18 18:16:06;home;Vertikální Port Sken;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);99 %;Lokální síť (2 IP);Více portů (500);1002
+2026-04-18 18:14:06;home;Vertikální Port Sken;192.168.69.208 (PCS Computer Systems GmbH - 08:00:27:b6:5c:c2);99 %;Lokální síť (2 IP);Více portů (500);501
