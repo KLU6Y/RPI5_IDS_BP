@@ -1,18 +1,34 @@
-Autonomní IDS systém na základu Raspberry Pi 5 se schopností real-time detekce a klasifikace anomálií síťového provozu.
+Tento repozitář obsahuje zdrojové kódy, konfigurační soubory a dokumentaci k bakalářské práci vytvořené na Přírodovědecké fakultě Jihočeské univerzity v Českých Budějovicích v roce 2026.
+
+Autor: Michal Kluger
+
+📖 O projektu
+Projekt představuje komplexní, plně lokální a nízkonákladový systém detekce průniků (NIDS) navržený primárně pro nasazení v menších lokálních sítích (SOHO) využívajících protokol IPv4. Cílem řešení je demonstrovat, že pokročilá kybernetická bezpečnost a behaviorální analýza sítě není výsadou pouze velkých korporátních infrastruktur.
+
+Systém využívá pasivní monitorování provozu (pomocí funkce Port Mirroring na chytrém switchi), takže do sítě aktivně nezasahuje a v případě selhání nezpůsobí její výpadek. Je postaven na levném mikropočítači Raspberry Pi 5 a plně využívá moderních open-source technologií.
+
+🛡️ Klíčové vlastnosti (Hybridní detekční model)
+Systém kombinuje dva přístupy pro zajištění maximální bezpečnosti:
+
+1. Signaturní detekce (Pravidla)
+Neznámá zařízení: Detekce cizích MAC adres vůči dynamickému Whitelistu.
+ARP Spoofing: Detekce útoků typu Man-in-the-Middle pomocí heuristiky na L3 vrstvě.
+Mapování sítě: Pokročilá identifikace vertikálního a horizontálního skenování portů (Nmap, stealth scany).
+Nadměrný datový tok: Hlídání neobvyklých objemů stahování a detekce potenciální exfiltrace dat.
+Škodlivé domény: Kontrola překladu DNS a šifrované SNI komunikace vůči zavedeným Blacklistům (AdBlock seznamy).
+
+2. Behaviorální analýza (Strojové učení)
+Využívá algoritmus Isolation Forest pro učení bez učitele (Unsupervised learning).
+Model se sám naučí "normální" profil chování vaší sítě (Baseline).
+Detekuje nestandardní odchylky v reálném čase bez nutnosti psát na ně specifická pravidla (inovativní identifikace tichých a neznámých hrozeb).
+Podpora vysoce citlivého režimu AWAY (pro sledování sítě v době nepřítomnosti uživatelů) a režimu HOME.
 
 
-Složka MAC_detekce je kompletní složkou MAC_detekce, se kterou pracuje celý systém, obsahuje natrénované modely, veškeré whitelisty, blacklisty a skripty potřebné k běhu.
 
-Složka ZEEK_LOGS obsahuje složky trénovacích JSON logů pro modely HOME a AWAY a složku TEST, která obsahuje data z doby, kdy byl model testován v reálném čase. Dále obsahuje CSV soubory s vyexportovanými "tabulkami" anomálií z InfluxDB podle jejich klasifikace.
+⚙️ Architektura a použité technologie
+Architektura je logicky rozdělena do čtyř vrstev:
 
-DATA_TRAFFIC.json - Konfigurace Grafana dashboardu
-
-LOG.json - Konfigurace Grafana dashboardu
-
-realtime_ml_monitor.py - Hlavní detekční skript
-
-train_network_model_v5.py - Trénovací skript pro ML model
-
-Příloha č. 1 - Příprava Prostředí (Priloha_1_Priprava_Prostredi.pdf) popisuje instalaci všech potřebných programů a jejich konfiguraci. Dále trénování modelů a spuštění samotného monitorovacího skriptu.
-
-Příloha č. 2 - Příprava Grafany (Priloha_2_Priprava_Grafany.pdf) popisuje způsob konfigurace Dashboardů a varovných alertů
+- Sběr a normalizace: Zeek zpracovává surové pakety a převádí je do strukturovaných JSON logů.
+- Analytické jádro: Autorský Python skript (s využitím knihoven Pandas a Scikit-Learn) provádí Feature Engineering do časových oken a vyhodnocuje události.
+- Úložiště: Rychlá time-series databáze InfluxDB pro záznam událostí a metrik.
+- Vizualizace a varování: Grafana poskytuje interaktivní dashboardy a zajišťuje okamžité notifikace skrze webové webhooky na Discord.
