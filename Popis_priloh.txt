@@ -1,4 +1,4 @@
-INFLUX_export - Obsahuje složku s CSV soubory s vyexportovanými "tabulkami" anomálií z InfluxDB podle jejich klasifikace.
+INFLUX_export - Obsahuje složku s CSV soubory s vyexportovanými "tabulkami" anomálií z InfluxDB podle jejich klasifikace, konkrétně z časového období 30.3. - 19.4.
 
 Složka MAC_detekce je kompletní složkou MAC_detekce, se kterou pracuje celý systém, obsahuje natrénované modely, veškeré whitelisty, blacklisty a skripty potřebné k běhu.
 

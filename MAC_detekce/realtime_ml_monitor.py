@@ -514,13 +514,31 @@ def run_ml_monitor():
                 vec_df = pd.DataFrame([vec_data])[feature_cols]
                 vec_scaled = scalers[mode].transform(vec_df)
                 
+                # Pokud model detekuje anomálii (-1)
                 if models[mode].predict(vec_scaled)[0] == -1:
                     already_caught = any(a["table"] in ["anomaly_high_traffic", "anomaly_port_scan"] for a in anomalies_detected)
+                    
                     if not already_caught:
-                        if (up_mb + down_mb > 0.7) or (u_ips > 30) or (fail_ratio > 0.4):
+                        is_anomaly_valid = False
+                        
+                        # --- HOME REŽIM ---
+                        # Přísnější limity pro odfiltrování běžného denního ruchu
+                        if mode == "home":
+                            if (up_mb + down_mb > 0.7) or (u_ips > 30) or (fail_ratio > 0.4 and total_conns >= 15):
+                                is_anomaly_valid = True
+                                
+                        # --- AWAY REŽIM ---
+                        # Citlivější limity, chráníme se jen proti absolutnímu "idle" šumu (např. 2 mDNS pakety)
+                        elif mode == "away":
+                            if (up_mb + down_mb > 0.1) or (u_ips > 10) or (fail_ratio > 0.2 and total_conns >= 8):
+                                is_anomaly_valid = True
+
+                        # Zápis anomálie, pokud prošla filtrem daného režimu
+                        if is_anomaly_valid:
                             share_conns = conns_max / total_conns if total_conns > 0 else 0
                             total_bytes = ml_stats["orig_bytes"] + ml_stats["resp_bytes"]
                             share_bytes = ctx_bytes["ip"].get(top_ip_bytes, 0) / total_bytes if total_bytes > 0 else 0
+                            
                             if share_bytes > (share_conns - 0.2) and (up_mb + down_mb) > 1.0:
                                 ml_ip, ml_mac, ml_dev = top_ip_bytes, mac_bytes, dev_bytes
                                 ml_dest, ml_svc, ml_dom = top_dest_bytes, top_svc_bytes, dom_bytes
