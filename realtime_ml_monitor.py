@@ -9,11 +9,12 @@ from collections import defaultdict
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-# ==========================================
-# --- KONFIGURACE ---
-# ==========================================
+# Tento skript provádí nepřetržité sledování Zeek logů.
+# Detekce anomálií kombinuje heuristická kritéria (např. skenování portů,
+# zakázané domény, neznámé MAC adresy) s předtrénovaným modelem pro
+# strukturální anomálie.
 SPOOL_DIR = "/opt/zeek/spool/zeek"
-MODE_FILE = "/home/klugy/MAC_detekce/AWAY_MODE.lock" 
+MODE_FILE = "/home/klugy/MAC_detekce/AWAY_MODE.lock"
 
 LOGS = {
     "conn": os.path.join(SPOOL_DIR, "conn.log"),
@@ -22,23 +23,26 @@ LOGS = {
     "ssl": os.path.join(SPOOL_DIR, "ssl.log")
 }
 
+# Cesty ke konfiguračním souborům, které se mohou v průběhu běhu aplikace
+# dynamicky aktualizovat.
 WHITELIST_FILE = "/home/klugy/MAC_detekce/WhitelistMAC.csv"
 VENDORS_FILE = "/home/klugy/MAC_detekce/mac-vendor.txt"
-BANNED_DIR = "/home/klugy/MAC_detekce/Banned" 
-ALERT_INTERVAL = 30 
-ROUTER_IP = "192.168.69.254" 
+BANNED_DIR = "/home/klugy/MAC_detekce/Banned"
+ALERT_INTERVAL = 30
+ROUTER_IP = "192.168.69.254"
 
 INFLUX_URL = "http://localhost:8086"
 INFLUX_TOKEN = "VÁŠ_TOKEN"
 INFLUX_ORG = "home"
 INFLUX_BUCKET = "zeek"
 
-# ==========================================
-# --- GLOBALNI STAVY A PAMET ---
-# ==========================================
+# Globální proměnné uchovávají průběžná agregovaná data, kontextové struktury
+# a předem načtené artefakty modelu, které jsou potřeba při každé iteraci
+# monitorovací smyčky.
 ts = datetime.now().strftime('%H:%M:%S')
 print(f"[{ts}] [SYSTEM] Nacitam ML modely a scalery...")
 
+# Načtené modely a škálovače pro jednotlivé režimy provozu.
 models = {
     "home": joblib.load("model_home.pkl"),
     "away": joblib.load("model_away.pkl")
@@ -47,8 +51,9 @@ scalers = {
     "home": joblib.load("scaler_home.pkl"),
     "away": joblib.load("scaler_away.pkl")
 }
-feature_cols = joblib.load("columns_home.pkl") 
+feature_cols = joblib.load("columns_home.pkl")
 
+# Aktuální agregovaná statistika pro minutové vyhodnocení.
 ml_stats = {
     "orig_bytes": 0, "resp_bytes": 0,
     "unique_ports": set(), "unique_ips": set(),
@@ -58,19 +63,26 @@ ml_stats = {
     "failed_conns": 0
 }
 
+# Pomocné kontejnery uchovávají kontextové informace o přenesených datech
+# a počtech spojení pro jednotlivé IP adresy, cíle a služby.
 ctx_bytes = {"ip": defaultdict(int), "dest_ips": defaultdict(int), "proto_port": defaultdict(int)}
 ctx_count = {"ip": defaultdict(int), "dest_ips": defaultdict(int), "proto_port": defaultdict(int), "domains": defaultdict(int)}
 
+# Sady a čítače pro monitorování potenciálních útočníků podle unikátních
+# cílových portů, adres a selhaných spojení.
 attacker_u_ports = defaultdict(set)
 attacker_u_ips = defaultdict(set)
 attacker_local_ips = defaultdict(set)
 attacker_fails = defaultdict(int)
 
+# Mapování mezi IP adresami, MAC adresami a doménami pro následnou
+# identifikaci zařízení a cílových služeb.
 ip_to_mac = {}
 ip_to_domain = {}
 known_ip_mac_map = {}
 arp_alert_cooldown = {}
 
+# Stav pro detekci zakázaných domén a jejich četnosti.
 banned_hits = defaultdict(int)
 banned_domains_set = set()
 
@@ -80,10 +92,16 @@ mac_state = {
 }
 banned_state = {"last_mtime": 0, "last_check": time.time()}
 
-# ==========================================
-# --- POMOCNE FUNKCE ---
-# ==========================================
+# Helper funkce poskytují abstrahovaný přístup k souborovým zdrojům,
+# aktualizují kontext a transformují externí konfigurace do interních
+# datových struktur.
 def load_whitelist():
+    """
+    Načte seznam povolených MAC adres z CSV souboru.
+
+    Vrátí mapu MAC -> popis zařízení. Slouží ke snížení falešných poplachů
+    u známých místních zařízení.
+    """
     wl = {}
     try:
         df = pd.read_csv(WHITELIST_FILE, sep=';')
@@ -93,21 +111,37 @@ def load_whitelist():
             name = str(row[name_col]).strip() if name_col else "Zname zarizeni"
             wl[mac] = name
         return wl
-    except Exception: return {}
+    except Exception:
+        return {}
 
 def load_vendors():
+    """
+    Načte databázi výrobců podle MAC OUI.
+
+    Výstupem je slovník prefix -> název výrobce, který se používá pro bližší
+    identifikaci anonymních zařízení.
+    """
     v_db = {}
     try:
         with open(VENDORS_FILE, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
-                if not line: continue
+                if not line:
+                    continue
                 parts = line.split(maxsplit=1)
-                if len(parts) == 2: v_db[parts[0].strip().lower()] = parts[1].strip()
+                if len(parts) == 2:
+                    v_db[parts[0].strip().lower()] = parts[1].strip()
         return v_db
-    except Exception: return {}
+    except Exception:
+        return {}
 
 def load_banned_domains():
+    """
+    Načte zakázané domény ze složky s listy a normalizuje je pro porovnání.
+
+    Podporuje formát Adblock/hosts, kde se ignorují komentáře a speciální
+    konstrukce.
+    """
     b_set = set()
     if not os.path.exists(BANNED_DIR):
         os.makedirs(BANNED_DIR)
@@ -119,10 +153,13 @@ def load_banned_domains():
                 with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                     for line in f:
                         d = line.strip().lower()
-                        if not d or d.startswith('!') or d.startswith('#') or d.startswith('['): continue
+                        if not d or d.startswith('!') or d.startswith('#') or d.startswith('['):
+                            continue
                         d = d.replace('||', '').split('^')[0].strip()
-                        if d: b_set.add(d)
-            except Exception: pass
+                        if d:
+                            b_set.add(d)
+            except Exception:
+                pass
     print(f"[{datetime.now().strftime('%H:%M:%S')}] [SYSTEM] Nacteno {len(b_set)} zakazanych domen.")
     return b_set
 
@@ -179,11 +216,18 @@ def check_banned(domain, ip):
             banned_hits[(ip, sub)] += 1
             break
 
-# ==========================================
-# --- ZPRACOVANI RADKU ---
-# ==========================================
+# Zpracování jednotlivých záznamů logů provádí rozpoznání relevantních
+# metrik, aktualizaci detekčních struktur a zařazení okamžitého kontextu
+# do kumulativních statistik.
 def process_line(log_type, line, write_api, mode):
-    if line.startswith('#'): return
+    """
+    Zpracuje jeden řádek logu podle typu a aktualizuje interní detekční statistiky.
+
+    Kód rozlišuje spojení, DNS a webový provoz a akumuluje metriky pro
+    následnou minutovou evaluaci.
+    """
+    if line.startswith('#'):
+        return
     try:
         data = json.loads(line)
         orig_h = data.get("id.orig_h", "")
@@ -290,9 +334,8 @@ def process_line(log_type, line, write_api, mode):
             
     except json.JSONDecodeError: pass
 
-# ==========================================
-# --- HLAVNI SMYCKA ---
-# ==========================================
+# Hlavní smyčka orchestrace spojení logů, periodicita vyhodnocení,
+# přepínání režimů a záznam výsledků do InfluxDB.
 def run_ml_monitor():
     mac_state["whitelist"] = load_whitelist()
     mac_state["vendors"] = load_vendors()
@@ -375,7 +418,7 @@ def run_ml_monitor():
 
                 anomalies_detected = []
 
-                # 1. NADMERNY PRENOS DAT
+                # 1. Analýza objemového provozu pro detekci nadměrných toků dat
                 if up_mb > 50 or down_mb > 100:
                     anomalies_detected.append({
                         "table": "anomaly_high_traffic", "label": "Nadmerny datovy prenos",
@@ -384,7 +427,7 @@ def run_ml_monitor():
                         "value_key": "total_mb", "value_val": up_mb + down_mb
                     })
 
-                # 2. ANALÝZA PRŮZKUMU SÍTĚ (PORT SCAN / SWEEP)
+                # 2. Heuristická analýza skenovacích vzorů v lokální a externí síti
                 if top_attacker_ip != "N/A" and top_attacker_ip != ROUTER_IP:
                     def get_dest_str(ip_set, is_local=False):
                         count = len(ip_set)
@@ -447,7 +490,7 @@ def run_ml_monitor():
                             "value_key": "connections", "value_val": atk_conns, "fail_ratio": atk_fail_ratio
                         })
 
-                # 3. ZAKAZANE DOMENY
+                # 3. Identifikace komunikace na zakázané domény
                 if banned_hits:
                     for (b_ip, b_dom), b_count in banned_hits.items():
                         b_mac, b_dev = ip_to_mac.get(b_ip, ""), get_device_info(ip_to_mac.get(b_ip, ""))
@@ -459,7 +502,7 @@ def run_ml_monitor():
                         })
                     banned_hits.clear()
 
-                # 4. ML DETEKCE
+                # 4. Vyhodnocení strukturálních anomálií pomocí předtrénovaného modelu
                 avg_duration = ml_stats["total_duration"] / ml_stats["duration_count"] if ml_stats["duration_count"] > 0 else 0.0
                 vec_data = {
                     "orig_bytes": ml_stats["orig_bytes"], "resp_bytes": ml_stats["resp_bytes"],
@@ -495,7 +538,7 @@ def run_ml_monitor():
                                 "up": up_mb, "down": down_mb
                             })
 
-                # --- VYPIS A ULOZENI DO INFLUXDB ---
+                # Výstupní fáze: záznam detekovaných anomálií do logu a do InfluxDB
                 ts = datetime.now().strftime('%H:%M:%S')
                 if anomalies_detected:
                     for anomaly in anomalies_detected:
